@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Từ vựng tiếng Anh</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://apis.google.com/js/api.js"></script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+  <div class="max-w-3xl mx-auto p-4">
+    <h1 class="text-2xl font-bold mb-4 text-center">Kiểm Tra Từ Vựng Tiếng Anh</h1>
+
+    <div id="settingsPanel">
+      <div class="mb-4">
+        <label class="block text-lg font-semibold">Chọn chế độ:</label>
+        <select id="mode" class="w-full mt-2 p-2 border rounded" required>
+          <option value="" disabled selected>---- Lựa chọn ----</option>
+          <option value="learn-quiz">Học - Trắc nghiệm</option>
+          <option value="learn-write">Học - Viết từ</option>
+          <option value="test-quiz">Kiểm tra - Trắc nghiệm</option>
+          <!-- <option value="test-write">Kiểm tra - Viết từ</option> -->
+        </select>
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-lg font-semibold">Chọn số câu:</label>
+        <select id="questionCount" class="w-full mt-2 p-2 border rounded" required>
+          <option value="" disabled selected>---- Lựa chọn ----</option>
+          <option value="10">10 câu</option>
+          <option value="20">20 câu</option>
+          <option value="30">30 câu</option>
+          <option value="50">50 câu</option>
+        </select>
+      </div>
+
+      <div class="mb-6 text-center">
+        <button onclick="validateAndStart()" class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">Bắt đầu</button>
+      </div>
+    </div>
+
+    <div id="timer" class="text-center font-bold text-xl mb-4 hidden"></div>
+    <div id="paging" class="flex flex-wrap gap-2 mb-4"></div>
+    <div id="questionContainer" class="mb-6"></div>
+
+    <div class="text-center">
+      <button id="submitBtn" onclick="endTest(true)" class="hidden bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Nộp bài</button>
+    </div>
+
+    <div id="result" class="text-center font-semibold mt-6"></div>
+    <div id="refreshContainer" class="text-center mt-4 hidden">
+      <button onclick="location.reload()" class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-600">🔄 Làm lại</button>
+    </div>
+  </div>
+
+  <script src="./js/script.js">
+  </script>
+</body>
+</html>
