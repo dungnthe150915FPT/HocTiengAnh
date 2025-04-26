@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lịch Sử Thi</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-50 text-gray-800">
+    <div class="max-w-3xl mx-auto p-4">
+        <h1 class="text-2xl font-bold mb-4 text-center">Lịch Sử Thi</h1>
+
+        <table class="min-w-full bg-white border border-gray-300">
+            <thead>
+                <tr>
+                    <th class="py-2 px-4 border-b">Tên</th>
+                    <th class="py-2 px-4 border-b">Ngày</th>
+                    <th class="py-2 px-4 border-b">Giờ</th>
+                    <th class="py-2 px-4 border-b">Điểm</th>
+                </tr>
+            </thead>
+            <tbody id="historyTableBody">
+                <!-- Lịch sử thi sẽ được hiển thị ở đây -->
+            </tbody>
+        </table>
+
+        <div class="text-center mt-6">
+            <button onclick="location.href='./'" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Quay
+                lại</button>
+        </div>
+    </div>
+
+    <script>
+        // URL của Web App Google Apps Script
+        const webhookUrl = "https://script.google.com/macros/s/AKfycbz2hLhKldXC9owrL_GrVV5U3pUk0BILtg7BsgSF1ffxjmh-pOHUj_ZMdb0qTjWViBRu/exec"; // Thay bằng URL Web App của bạn
+
+        // Lấy dữ liệu lịch sử từ Google Sheets
+        fetch(webhookUrl, { mode: "no-cors" })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.text();
+            })
+            .then(text => {
+                const history = JSON.parse(text);
+                const historyTableBody = document.getElementById("historyTableBody");
+
+                if (history.length === 0) {
+                    historyTableBody.innerHTML = `<tr><td colspan="4" class="text-center py-4">Không có lịch sử thi nào.</td></tr>`;
+                    return;
+                }
+
+                history.forEach(item => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+        <td class="py-2 px-4 border-b">${item.name}</td>
+        <td class="py-2 px-4 border-b">${item.date}</td>
+        <td class="py-2 px-4 border-b">${item.time}</td>
+        <td class="py-2 px-4 border-b">${item.score}</td>
+      `;
+                    historyTableBody.appendChild(row);
+                });
+            })
+            .catch(error => {
+                console.error("Lỗi khi tải lịch sử:", error);
+                const historyTableBody = document.getElementById("historyTableBody");
+                historyTableBody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-red-500">Không thể tải lịch sử thi. Vui lòng thử lại sau.</td></tr>`;
+            });
+    </script>
+</body>
+
+</html>

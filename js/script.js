@@ -9,10 +9,32 @@ let userAnswers = [];
 let quizOptions = [];
 let isTestSubmitted = false;
 
+// document.getElementById('mode').addEventListener('change', (e) => {
+//   selectedMode = e.target.value;
+// });
 document.getElementById('mode').addEventListener('change', (e) => {
   selectedMode = e.target.value;
+
+  // Hiển thị trường nhập tên nếu chọn chế độ kiểm tra
+  const nameInputContainer = document.getElementById("nameInputContainer");
+  if (selectedMode === "test-quiz") {
+    nameInputContainer.style.display = "block";
+  } else {
+    nameInputContainer.style.display = "none";
+  }
 });
 
+// function validateAndStart() {
+//   const mode = document.getElementById("mode").value;
+//   const count = document.getElementById("questionCount").value;
+
+//   if (!mode || !count) {
+//     alert("Vui lòng chọn đầy đủ chế độ và số câu!");
+//     return;
+//   }
+
+//   startTest();
+// }
 function validateAndStart() {
   const mode = document.getElementById("mode").value;
   const count = document.getElementById("questionCount").value;
@@ -20,6 +42,14 @@ function validateAndStart() {
   if (!mode || !count) {
     alert("Vui lòng chọn đầy đủ chế độ và số câu!");
     return;
+  }
+
+  if (mode === "test-quiz") {
+    const userName = document.getElementById("userName").value.trim();
+    if (!userName) {
+      alert("Vui lòng nhập tên của bạn!");
+      return;
+    }
   }
 
   startTest();
@@ -132,36 +162,42 @@ function showQuestion() {
     let selectedClass = "";
     let disabledAttr = "";
 
+    // Loại bỏ dấu ngoặc kép trong đáp án
+    const sanitizedOpt = opt.replace(/"/g, "");
+
     // Chế độ học: disable sau khi chọn
     if (selectedMode === "learn-quiz" && ua) {
       disabledAttr = "disabled";
-      if (ua.userAnswer === opt && ua.userAnswer === q.Nghia) {
+      if (ua.userAnswer === sanitizedOpt && ua.userAnswer === q.Nghia) {
         selectedClass = "bg-green-400 text-white";
-      } else if (ua.userAnswer === opt) {
+      } else if (ua.userAnswer === sanitizedOpt) {
         selectedClass = "bg-red-400 text-white";
-      } else if (opt === q.Nghia) {
+      } else if (sanitizedOpt === q.Nghia) {
         selectedClass = "bg-green-400 text-white";
       }
     }
     // Chế độ kiểm tra: disable sau khi nộp bài
     else if (selectedMode === "test-quiz" && isTestSubmitted) {
       disabledAttr = "disabled";
-      if (ua?.userAnswer === opt && ua.userAnswer === q.Nghia) {
+      if (ua?.userAnswer === sanitizedOpt && ua.userAnswer === q.Nghia) {
         selectedClass = "bg-green-400 text-white";
-      } else if (ua?.userAnswer === opt) {
+      } else if (ua?.userAnswer === sanitizedOpt) {
         selectedClass = "bg-red-400 text-white";
-      } else if (opt === q.Nghia) {
+      } else if (sanitizedOpt === q.Nghia) {
         selectedClass = "bg-green-400 text-white";
       }
     }
     // Chế độ kiểm tra chưa nộp: highlight đã chọn
-    else if (selectedMode === "test-quiz" && ua?.userAnswer === opt) {
+    else if (selectedMode === "test-quiz" && ua?.userAnswer === sanitizedOpt) {
       selectedClass = "bg-yellow-300";
     }
 
-    html += `<button ${disabledAttr} onclick="checkAnswer('${opt}')" 
-            class='block w-full text-left mb-2 px-4 py-2 border rounded hover:bg-blue-100 ${selectedClass}'>
-            ${String.fromCharCode(65 + i)}. ${opt}</button>`;
+    // Sử dụng encodeURIComponent để mã hóa đáp án
+    const encodedOpt = encodeURIComponent(sanitizedOpt);
+
+    html += `<button ${disabledAttr} onclick="checkAnswer('${encodedOpt}')" 
+          class='block w-full text-left mb-2 px-4 py-2 border rounded hover:bg-blue-100 ${selectedClass}'>
+          ${String.fromCharCode(65 + i)}. ${sanitizedOpt}</button>`;
   });
 
   // Hiển thị kết quả chi tiết
@@ -236,9 +272,10 @@ function checkLearnWriteAnswer() {
 }
 
 function checkAnswer(selected) {
+  const decodedAnswer = decodeURIComponent(selected).replace(/"/g, ""); // Loại bỏ dấu ngoặc kép
   const q = questions[currentQuestion];
-  const isCorrect = selected === q.Nghia;
-  userAnswers[currentQuestion] = { ...q, userAnswer: selected };
+  const isCorrect = decodedAnswer === q.Nghia;
+  userAnswers[currentQuestion] = { ...q, userAnswer: decodedAnswer };
 
   updatePagingStatus(currentQuestion, "answered");
 
@@ -249,12 +286,20 @@ function checkAnswer(selected) {
   }
 }
 
+// function nextQuestion() {
+//   currentQuestion++;
+//   if (currentQuestion < questions.length) showQuestion();
+//   else if (!selectedMode.startsWith("test")) endTest(false);
+// }
 function nextQuestion() {
-  currentQuestion++;
-  if (currentQuestion < questions.length) showQuestion();
-  else if (!selectedMode.startsWith("test")) endTest(false);
+  if (currentQuestion < questions.length - 1) {
+    currentQuestion++;
+    showQuestion();
+  } else {
+    // Nếu là câu cuối cùng, hiển thị lại câu hiện tại để cập nhật màu vàng
+    showQuestion();
+  }
 }
-
 function endTest(showReview) {
   clearInterval(timer);
   document.getElementById("submitBtn").classList.add("hidden");
@@ -284,7 +329,10 @@ function endTest(showReview) {
       }
     });
 
+    const totalQuestions = questions.length;
     document.getElementById("result").textContent = `🎉 Bạn đã hoàn thành! Số câu đúng: ${correctCount}/${questions.length}`;
+    // Lưu lịch sử thi
+    saveHistory(correctCount, totalQuestions);
   }
 
   showQuestion();
@@ -295,8 +343,8 @@ fetch("https://docs.google.com/spreadsheets/d/120CoX9VP_g8s4R6lTPa5T2ykXKJykL6qK
   .then(csv => {
     const rows = csv.split("\n").map(row => row.split(","));
     data = rows.map(([Tu, Nghia]) => ({
-      Tu,
-      Nghia,
+      Tu: Tu.replace(/"/g, ""), // Loại bỏ dấu ngoặc kép
+      Nghia: Nghia.replace(/"/g, ""), // Loại bỏ dấu ngoặc kép
       Checked: false
     }));
 
@@ -314,4 +362,38 @@ function speak(text, voiceName = "Google US English") {
   }
   utterance.lang = "en-US";
   window.speechSynthesis.speak(utterance);
+}
+
+function saveHistory(correctCount, totalQuestions) {
+  const now = new Date();
+  const date = now.toLocaleDateString("vi-VN");
+  const time = now.toLocaleTimeString("vi-VN");
+  const userName = document.getElementById("userName")?.value.trim() || "Không rõ";
+
+  const data = {
+    date: date,
+    time: time,
+    score: `${correctCount}/${totalQuestions}`,
+    name: userName,
+  };
+
+  // URL của Web App Google Apps Script
+  const webhookUrl = "https://script.google.com/macros/s/AKfycbz2hLhKldXC9owrL_GrVV5U3pUk0BILtg7BsgSF1ffxjmh-pOHUj_ZMdb0qTjWViBRu/exec"; // Thay bằng URL Web App của bạn
+
+  // Gửi dữ liệu đến Google Sheets
+  fetch(webhookUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  })
+    .then((response) => {
+      if (response.ok) {
+        console.log("Lịch sử thi đã được lưu thành công!");
+      } else {
+        console.error("Lỗi khi lưu lịch sử thi:", response.statusText);
+      }
+    })
+    .catch((error) => console.error("Lỗi khi kết nối webhook:", error));
 }
